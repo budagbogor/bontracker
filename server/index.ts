@@ -272,6 +272,32 @@ app.post('/api/ai/test', async (req, res) => {
   }
 });
 
+// ============ RESET DATA ============
+
+// Delete all expenses
+app.delete('/api/expenses', async (_req, res) => {
+  try {
+    await db.delete(schema.expenses);
+    res.json({ success: true, message: 'Semua data pengeluaran berhasil dihapus' });
+  } catch (error) {
+    console.error('Error deleting all expenses:', error);
+    res.status(500).json({ error: 'Gagal menghapus data pengeluaran' });
+  }
+});
+
+// Reset all data (expenses, categories, budgets)
+app.post('/api/reset', async (_req, res) => {
+  try {
+    await db.delete(schema.expenses);
+    await db.delete(schema.categories);
+    await db.delete(schema.budgets);
+    res.json({ success: true, message: 'Semua data berhasil direset' });
+  } catch (error) {
+    console.error('Error resetting data:', error);
+    res.status(500).json({ error: 'Gagal mereset data' });
+  }
+});
+
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);

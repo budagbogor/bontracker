@@ -156,3 +156,17 @@ export async function testAiConnection(apiKey: string, model: string, provider: 
   });
   return res.json();
 }
+
+// ============ RESET DATA ============
+
+export async function deleteAllExpenses(): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`${API_BASE}/expenses`, { method: 'DELETE' });
+  if (!res.ok) throw new Error('Gagal menghapus data pengeluaran');
+  return res.json();
+}
+
+export async function resetAllData(): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`${API_BASE}/reset`, { method: 'POST' });
+  if (!res.ok) throw new Error('Gagal mereset semua data');
+  return res.json();
+}

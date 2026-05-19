@@ -1,6 +1,126 @@
 import { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, Key, Server, Cpu, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
-import { testAiConnection } from '../lib/api';
+import { Settings as SettingsIcon, Key, Server, Cpu, CheckCircle2, AlertCircle, Loader2, Trash2, TriangleAlert } from 'lucide-react';
+import { testAiConnection, deleteAllExpenses, resetAllData } from '../lib/api';
+
+function ResetDataSection() {
+  const [showConfirm, setShowConfirm] = useState<'none' | 'expenses' | 'all'>('none');
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  const handleDeleteExpenses = async () => {
+    setLoading(true);
+    setResult(null);
+    try {
+      const res = await deleteAllExpenses();
+      setResult({ type: 'success', message: res.message });
+      setShowConfirm('none');
+    } catch (err: any) {
+      setResult({ type: 'error', message: err.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetAll = async () => {
+    setLoading(true);
+    setResult(null);
+    try {
+      const res = await resetAllData();
+      setResult({ type: 'success', message: res.message });
+      setShowConfirm('none');
+    } catch (err: any) {
+      setResult({ type: 'error', message: err.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="bg-surface border border-red-200 p-5 rounded-xl shadow-sm space-y-4">
+      <div className="flex items-center gap-2">
+        <TriangleAlert size={18} className="text-red-500" />
+        <h3 className="font-display text-lg font-bold text-on-surface">Hapus Data</h3>
+      </div>
+      <p className="font-sans text-xs text-gray-500">Aksi ini tidak dapat dibatalkan. Data yang dihapus tidak bisa dikembalikan.</p>
+
+      {/* Delete Expenses Only */}
+      <div className="space-y-2">
+        {showConfirm !== 'expenses' ? (
+          <button
+            onClick={() => { setShowConfirm('expenses'); setResult(null); }}
+            className="w-full py-3 border border-red-300 text-red-600 font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-red-50 active:scale-[0.98] transition-all"
+          >
+            <Trash2 size={16} />
+            Hapus Semua Pengeluaran
+          </button>
+        ) : (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 space-y-3">
+            <p className="font-sans text-sm text-red-700 font-medium">Yakin hapus semua data pengeluaran?</p>
+            <div className="flex gap-2">
+              <button
+                onClick={handleDeleteExpenses}
+                disabled={loading}
+                className="flex-1 py-2.5 bg-red-600 text-white font-bold rounded-lg flex items-center justify-center gap-2 hover:bg-red-700 disabled:opacity-50 transition-all"
+              >
+                {loading ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                Ya, Hapus
+              </button>
+              <button
+                onClick={() => setShowConfirm('none')}
+                className="flex-1 py-2.5 bg-gray-200 text-gray-700 font-bold rounded-lg hover:bg-gray-300 transition-all"
+              >
+                Batal
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Reset All Data */}
+      <div className="space-y-2">
+        {showConfirm !== 'all' ? (
+          <button
+            onClick={() => { setShowConfirm('all'); setResult(null); }}
+            className="w-full py-3 bg-red-600 text-white font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-red-700 active:scale-[0.98] transition-all shadow-md"
+          >
+            <Trash2 size={16} />
+            Reset Semua Data (Pengeluaran + Kategori + Anggaran)
+          </button>
+        ) : (
+          <div className="bg-red-50 border border-red-300 rounded-xl p-4 space-y-3">
+            <p className="font-sans text-sm text-red-700 font-medium">⚠️ Ini akan menghapus SEMUA data: pengeluaran, kategori, dan anggaran. Yakin?</p>
+            <div className="flex gap-2">
+              <button
+                onClick={handleResetAll}
+                disabled={loading}
+                className="flex-1 py-2.5 bg-red-700 text-white font-bold rounded-lg flex items-center justify-center gap-2 hover:bg-red-800 disabled:opacity-50 transition-all"
+              >
+                {loading ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                Ya, Reset Semua
+              </button>
+              <button
+                onClick={() => setShowConfirm('none')}
+                className="flex-1 py-2.5 bg-gray-200 text-gray-700 font-bold rounded-lg hover:bg-gray-300 transition-all"
+              >
+                Batal
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Result */}
+      {result && (
+        <div className={`flex items-center gap-2 px-4 py-3 rounded-lg border ${
+          result.type === 'success' ? 'text-green-700 bg-green-50 border-green-200' : 'text-red-700 bg-red-50 border-red-200'
+        }`}>
+          {result.type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+          <span className="font-sans text-sm font-medium">{result.message}</span>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function SettingsView() {
   const [provider, setProvider] = useState('sumopod');
@@ -213,6 +333,9 @@ export default function SettingsView() {
           <li>Buka menu "Struk OCR" untuk scan bon</li>
         </ol>
       </div>
+
+      {/* Reset Data Section */}
+      <ResetDataSection />
     </div>
   );
 }
