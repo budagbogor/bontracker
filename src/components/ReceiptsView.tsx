@@ -1,6 +1,6 @@
-import { Camera, Store, Calendar, Tags, Save, Upload, X, Loader2, CheckCircle2 } from 'lucide-react';
-import { useState, useRef } from 'react';
-import { scanReceipt, createExpense, type OcrResult } from '../lib/api';
+import { Camera, Store, Calendar, Tags, Save, Upload, X, Loader2, CheckCircle2, AlertTriangle, Info } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { scanReceipt, createExpense, getSettings, type OcrResult } from '../lib/api';
 
 export default function ReceiptsView() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -9,6 +9,7 @@ export default function ReceiptsView() {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [hasApiKey, setHasApiKey] = useState<boolean | null>(null); // null = loading
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form state
@@ -17,6 +18,13 @@ export default function ReceiptsView() {
   const [category, setCategory] = useState('');
   const [total, setTotal] = useState('');
   const [notes, setNotes] = useState('');
+
+  // Check if API key is configured
+  useEffect(() => {
+    getSettings()
+      .then((data) => setHasApiKey(data.hasApiKey))
+      .catch(() => setHasApiKey(false));
+  }, []);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -58,7 +66,7 @@ export default function ReceiptsView() {
           setNotes(itemNames);
         }
       } catch (err: any) {
-        setError(err.message || 'Gagal memproses struk');
+        setError(err.message || 'Gagal memproses struk. Pastikan API Key sudah dikonfigurasi di Pengaturan.');
       } finally {
         setIsAnalyzing(false);
       }
@@ -113,9 +121,38 @@ export default function ReceiptsView() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="font-display text-2xl font-bold text-on-surface">Input Struk Baru</h2>
-        <p className="font-sans text-gray-500 mt-1 text-sm">Foto struk belanja, AI akan membaca datanya otomatis.</p>
+        <h2 className="font-display text-2xl font-bold text-on-surface">Scan Struk (OCR)</h2>
+        <p className="font-sans text-gray-500 mt-1 text-sm">Upload foto struk, AI akan membaca dan mengisi form otomatis.</p>
       </div>
+
+      {/* API Key Warning */}
+      {hasApiKey === false && (
+        <div className="bg-yellow-50 border border-yellow-300 rounded-xl p-4 flex items-start gap-3">
+          <AlertTriangle size={20} className="text-yellow-600 mt-0.5 shrink-0" />
+          <div>
+            <p className="font-sans text-sm text-yellow-800 font-bold">API Key belum dikonfigurasi</p>
+            <p className="font-sans text-xs text-yellow-700 mt-1">
+              Fitur OCR membutuhkan API Key dari Sumopod. Buka menu <strong>Pengaturan (⚙️)</strong> → masukkan API Key → klik Simpan.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* How it works */}
+      {!imagePreview && !ocrResult && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Info size={14} className="text-blue-600" />
+            <p className="font-mono text-xs text-blue-700 font-bold">Cara Kerja</p>
+          </div>
+          <ol className="font-sans text-xs text-blue-600 space-y-1 list-decimal list-inside">
+            <li>Upload foto struk/bon belanja (JPG/PNG, maks 5MB)</li>
+            <li>AI akan membaca teks dan mengenali: toko, tanggal, item, total</li>
+            <li>Form terisi otomatis — periksa & koreksi jika perlu</li>
+            <li>Klik "Simpan Transaksi" untuk menyimpan ke database</li>
+          </ol>
+        </div>
+      )}
 
       {/* Camera / OCR section */}
       <section>
@@ -129,22 +166,22 @@ export default function ReceiptsView() {
         />
 
         <div
-          onClick={!imagePreview ? () => fileInputRef.current?.click() : undefined}
+          onClick={!imagePreview && !isAnalyzing ? () => fileInputRef.current?.click() : undefined}
           className={`border-2 border-dashed border-primary/40 bg-surface rounded-xl p-6 flex flex-col items-center justify-center min-h-[200px] transition-all
-            ${!imagePreview ? 'cursor-pointer hover:bg-orange-50 active:scale-[0.99]' : ''}`}
+            ${!imagePreview && !isAnalyzing ? 'cursor-pointer hover:bg-orange-50 active:scale-[0.99]' : ''}`}
         >
           {!isAnalyzing && !imagePreview && (
             <div className="text-center">
               <Camera className="text-primary mx-auto mb-4" size={48} />
               <p className="font-mono text-sm text-primary font-bold uppercase">Foto Bon / Upload Gambar</p>
-              <p className="font-mono text-xs text-gray-500 mt-2">Format: JPG, PNG (Maks. 5MB)</p>
+              <p className="font-mono text-xs text-gray-500 mt-2">Tap area ini atau klik tombol di bawah</p>
               <div className="mt-4 flex gap-2 justify-center">
                 <button
                   onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
-                  className="px-4 py-2 bg-primary text-white rounded-lg font-mono text-xs font-bold flex items-center gap-2"
+                  className="px-4 py-2 bg-primary text-white rounded-lg font-mono text-xs font-bold flex items-center gap-2 shadow-md"
                 >
                   <Upload size={14} />
-                  Pilih File
+                  Pilih Gambar
                 </button>
               </div>
             </div>
@@ -154,7 +191,7 @@ export default function ReceiptsView() {
             <div className="text-center">
               <Loader2 className="animate-spin text-primary mx-auto mb-4" size={40} />
               <p className="font-mono text-sm text-primary font-bold">Menganalisa Struk dengan AI...</p>
-              <p className="font-mono text-xs text-gray-500 mt-1">Membaca teks dan mengenali data</p>
+              <p className="font-mono text-xs text-gray-500 mt-1">Proses ini membutuhkan 3-10 detik</p>
             </div>
           )}
 
@@ -178,6 +215,12 @@ export default function ReceiptsView() {
                   OCR Berhasil
                 </div>
               )}
+              {!ocrResult && !error && (
+                <div className="absolute bottom-2 left-2 bg-yellow-500/90 text-white text-xs px-2.5 py-1 rounded-full font-mono font-bold flex items-center gap-1 backdrop-blur-sm">
+                  <AlertTriangle size={12} />
+                  OCR tidak mengembalikan data
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -185,8 +228,12 @@ export default function ReceiptsView() {
 
       {/* Error */}
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl font-mono text-xs">
-          {error}
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl font-sans text-sm flex items-start gap-2">
+          <AlertTriangle size={16} className="mt-0.5 shrink-0" />
+          <div>
+            <p className="font-bold text-xs">Error</p>
+            <p className="text-xs mt-0.5">{error}</p>
+          </div>
         </div>
       )}
 
@@ -216,6 +263,8 @@ export default function ReceiptsView() {
 
       {/* Form */}
       <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="space-y-4 bg-surface p-5 rounded-xl border border-outline shadow-sm">
+        <p className="font-mono text-xs text-gray-400 uppercase tracking-wider font-bold">Data Transaksi</p>
+        
         <div className="flex flex-col gap-1">
           <label className="font-mono text-xs text-gray-500 font-bold uppercase px-1">Nama Toko</label>
           <div className="relative">
@@ -292,7 +341,7 @@ export default function ReceiptsView() {
           <button
             type="submit"
             disabled={saving || saved}
-            className="w-full bg-primary text-white font-bold py-4 rounded-xl chiseled-btn flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 active:scale-[0.98] transition-all"
+            className="w-full bg-primary text-white font-bold py-4 rounded-xl flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 active:scale-[0.98] transition-all shadow-md"
           >
             {saving ? (
               <>
