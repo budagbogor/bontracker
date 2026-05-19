@@ -226,21 +226,26 @@ app.post('/api/ocr/receipt', async (req, res) => {
             },
             {
               type: 'text',
-              text: `Analisa gambar struk/bon ini dan extract informasi berikut dalam format JSON:
+              text: `Kamu adalah OCR struk belanja. Analisa gambar struk/bon ini dengan teliti dan extract semua informasi ke format JSON berikut:
+
 {
-  "store": "nama toko/merchant",
-  "date": "tanggal transaksi dalam format YYYY-MM-DD",
-  "items": [{"name": "nama item", "qty": jumlah, "price": harga_satuan}],
-  "total": total_belanja_angka_saja,
-  "category": "salah satu dari: Material, Tukang, Alat, Lainnya"
+  "store": "nama toko/merchant yang tertera di struk",
+  "date": "tanggal transaksi format YYYY-MM-DD",
+  "items": [
+    {"name": "nama barang", "qty": jumlah_beli, "price": harga_total_item_tersebut}
+  ],
+  "total": angka_total_keseluruhan,
+  "category": "Material/Tukang/Alat/Lainnya"
 }
 
-Rules:
-- Jika tidak bisa membaca field tertentu, isi dengan null
-- total harus berupa angka (tanpa Rp atau titik pemisah ribuan)
-- date harus format YYYY-MM-DD
-- category tentukan berdasarkan jenis barang yang dibeli (bahan bangunan = Material, jasa tukang = Tukang, peralatan = Alat, sisanya = Lainnya)
-- Jawab HANYA dengan JSON, tanpa markdown atau penjelasan lain`,
+PENTING - Rules ketat:
+- items.price WAJIB diisi angka harga untuk setiap item (baca dari kolom harga/jumlah di struk). Jika ada qty > 1, price = harga_satuan x qty (harga total baris tersebut)
+- Jika harga item tidak terbaca jelas, ESTIMASI dari total dibagi jumlah item
+- total = angka total akhir yang tertera di struk (tanpa Rp, tanpa titik/koma pemisah ribuan)
+- date format YYYY-MM-DD
+- qty minimal 1
+- category: bahan bangunan/material = "Material", jasa tukang = "Tukang", peralatan/tools = "Alat", lainnya = "Lainnya"
+- Jawab HANYA JSON murni, tanpa markdown, tanpa backtick, tanpa penjelasan`,
             },
           ],
         },
