@@ -1,6 +1,62 @@
-import { Wallet, Ruler, HardHat, Wrench, PlusCircle, Paintbrush, Banknote, Hammer } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Wallet, Ruler, HardHat, Wrench, PlusCircle, Paintbrush, Banknote, Hammer, Package, Loader2 } from 'lucide-react';
+import { getDashboardSummary, type DashboardSummary } from '../lib/api';
+import AddExpenseModal from './AddExpenseModal';
+
+const iconMap: Record<string, React.ElementType> = {
+  Ruler, HardHat, Wrench, Paintbrush, Banknote, Hammer, Package,
+};
+
+function formatRupiah(amount: string | number): string {
+  const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+  if (num >= 1_000_000) {
+    return `Rp ${(num / 1_000_000).toFixed(1)}M`;
+  }
+  return `Rp ${num.toLocaleString('id-ID')}`;
+}
 
 export default function DashboardView() {
+  const [data, setData] = useState<DashboardSummary | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+
+  const fetchData = () => {
+    setLoading(true);
+    getDashboardSummary()
+      .then(setData)
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="animate-spin text-primary" size={32} />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-20">
+        <p className="text-red-500 font-mono text-sm">Error: {error}</p>
+        <p className="text-gray-500 font-mono text-xs mt-2">Pastikan server backend berjalan (npm run dev:server)</p>
+      </div>
+    );
+  }
+
+  if (!data) return null;
+
+  const totalSpent = parseFloat(data.totalSpent);
+  const totalBudget = data.budget ? parseFloat(data.budget.totalBudget) : 75_000_000;
+  const progress = totalBudget > 0 ? Math.min((totalSpent / totalBudget) * 100, 100) : 0;
+  const remaining = totalBudget - totalSpent;
+
   return (
     <div className="space-y-6">
       {/* Summary Card */}
@@ -10,46 +66,40 @@ export default function DashboardView() {
         </div>
         <div className="relative z-10">
           <p className="font-mono text-xs text-gray-500 uppercase tracking-widest mb-1">Total Pengeluaran</p>
-          <h2 className="font-display text-3xl font-bold text-on-surface mb-4">Rp 48.250.000</h2>
+          <h2 className="font-display text-3xl font-bold text-on-surface mb-4">
+            Rp {totalSpent.toLocaleString('id-ID')}
+          </h2>
           
           <div className="flex justify-between items-end mb-2">
-            <span className="font-mono text-xs text-gray-500">Progres Anggaran (65%)</span>
-            <span className="font-mono text-sm text-primary font-bold">Sisa: Rp 26.750.000</span>
+            <span className="font-mono text-xs text-gray-500">Progres Anggaran ({progress.toFixed(0)}%)</span>
+            <span className="font-mono text-sm text-primary font-bold">Sisa: Rp {remaining.toLocaleString('id-ID')}</span>
           </div>
           
           <div className="w-full h-2.5 bg-gray-200 rounded-full overflow-hidden">
-            <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: '65%' }}></div>
+            <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${progress}%` }}></div>
           </div>
         </div>
       </section>
 
       {/* Category Grid */}
       <section className="grid grid-cols-2 gap-4">
-        <div className="bg-surface border border-outline p-4 rounded-xl flex flex-col justify-between h-32 hover:-translate-y-1 transition-transform shadow-sm">
-          <Ruler className="text-primary" size={28} />
-          <div>
-            <p className="font-mono text-xs text-gray-500 mb-1">Material</p>
-            <p className="font-mono text-sm font-bold text-on-surface">Rp 28.5M</p>
-          </div>
-        </div>
+        {data.byCategory.map((cat) => {
+          const Icon = iconMap[cat.category] || Package;
+          return (
+            <div key={cat.category} className="bg-surface border border-outline p-4 rounded-xl flex flex-col justify-between h-32 hover:-translate-y-1 transition-transform shadow-sm">
+              <Icon className="text-primary" size={28} />
+              <div>
+                <p className="font-mono text-xs text-gray-500 mb-1">{cat.category}</p>
+                <p className="font-mono text-sm font-bold text-on-surface">{formatRupiah(cat.total)}</p>
+              </div>
+            </div>
+          );
+        })}
         
-        <div className="bg-surface border border-outline p-4 rounded-xl flex flex-col justify-between h-32 hover:-translate-y-1 transition-transform shadow-sm">
-          <HardHat className="text-gray-600" size={28} />
-          <div>
-            <p className="font-mono text-xs text-gray-500 mb-1">Tukang</p>
-            <p className="font-mono text-sm font-bold text-on-surface">Rp 15.2M</p>
-          </div>
-        </div>
-        
-        <div className="bg-surface border border-outline p-4 rounded-xl flex flex-col justify-between h-32 hover:-translate-y-1 transition-transform shadow-sm">
-          <Wrench className="text-gray-500" size={28} />
-          <div>
-            <p className="font-mono text-xs text-gray-500 mb-1">Alat</p>
-            <p className="font-mono text-sm font-bold text-on-surface">Rp 4.55M</p>
-          </div>
-        </div>
-        
-        <button className="bg-primary text-white p-4 items-center justify-center rounded-xl flex flex-col h-32 chiseled-btn hover:-translate-y-1 transition-transform shadow-md">
+        <button 
+          onClick={() => setShowAddModal(true)}
+          className="bg-primary text-white p-4 items-center justify-center rounded-xl flex flex-col h-32 chiseled-btn hover:-translate-y-1 transition-transform shadow-md"
+        >
           <PlusCircle size={32} className="mb-2" />
           <span className="font-mono text-xs font-bold uppercase tracking-wider">Tambah</span>
         </button>
@@ -63,27 +113,33 @@ export default function DashboardView() {
         </div>
         
         <div className="space-y-3">
-          {[
-            { id: 1, title: 'Cat Dinding Jotun', date: '24 Okt 2023', category: 'Material', amount: '1.250.000', icon: Paintbrush },
-            { id: 2, title: 'Upah Tukang Mingguan', date: '22 Okt 2023', category: 'Tukang', amount: '3.500.000', icon: Banknote },
-            { id: 3, title: 'Sewa Drill Beton', date: '20 Okt 2023', category: 'Alat', amount: '450.000', icon: Hammer },
-          ].map((trx) => (
-            <div key={trx.id} className="bg-surface border border-outline p-4 rounded-xl flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer shadow-sm">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-orange-50 rounded-lg flex items-center justify-center text-primary">
-                  <trx.icon size={24} />
+          {data.recentExpenses.map((trx) => {
+            const Icon = iconMap[trx.category] || Package;
+            return (
+              <div key={trx.id} className="bg-surface border border-outline p-4 rounded-xl flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer shadow-sm">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-orange-50 rounded-lg flex items-center justify-center text-primary">
+                    <Icon size={24} />
+                  </div>
+                  <div>
+                    <p className="font-bold text-on-surface mb-0.5">{trx.title}</p>
+                    <p className="font-mono text-xs text-gray-500">
+                      {new Date(trx.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} • {trx.category}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-bold text-on-surface mb-0.5">{trx.title}</p>
-                  <p className="font-mono text-xs text-gray-500">{trx.date} • {trx.category}</p>
+                <div className="text-right">
+                  <p className="font-mono text-sm font-bold text-on-surface mb-1">Rp {parseFloat(trx.amount).toLocaleString('id-ID')}</p>
+                  <span className="text-[9px] bg-green-100 text-green-800 px-2 py-0.5 rounded uppercase font-bold tracking-wider">
+                    {trx.status || 'Berhasil'}
+                  </span>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="font-mono text-sm font-bold text-on-surface mb-1">Rp {trx.amount}</p>
-                <span className="text-[9px] bg-green-100 text-green-800 px-2 py-0.5 rounded uppercase font-bold tracking-wider">Berhasil</span>
-              </div>
-            </div>
-          ))}
+            );
+          })}
+          {data.recentExpenses.length === 0 && (
+            <p className="text-center text-gray-400 font-mono text-sm py-8">Belum ada transaksi</p>
+          )}
         </div>
       </section>
 
@@ -97,7 +153,9 @@ export default function DashboardView() {
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-5">
             <p className="text-white/80 font-mono text-xs uppercase tracking-widest mb-1">Tahap Saat Ini</p>
-            <h4 className="text-white font-display text-xl font-bold">Finishing Lantai 1</h4>
+            <h4 className="text-white font-display text-xl font-bold">
+              {data.budget?.currentPhase || 'Finishing Lantai 1'}
+            </h4>
           </div>
         </div>
         <div className="p-4 flex items-center justify-between bg-surface">
@@ -111,9 +169,18 @@ export default function DashboardView() {
               +3
             </div>
           </div>
-          <p className="font-mono text-xs text-gray-500">Estimasi Selesai: 15 Nov</p>
+          <p className="font-mono text-xs text-gray-500">
+            Estimasi Selesai: {data.budget?.estimatedCompletion || '-'}
+          </p>
         </div>
       </section>
+
+      {/* Add Expense Modal */}
+      <AddExpenseModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onSuccess={fetchData}
+      />
     </div>
   );
 }
