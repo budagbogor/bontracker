@@ -1,6 +1,104 @@
 import { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, Key, Server, Cpu, CheckCircle2, AlertCircle, Loader2, Trash2, TriangleAlert } from 'lucide-react';
-import { testAiConnection, deleteAllExpenses, resetAllData, getSettings, saveSettings } from '../lib/api';
+import { Settings as SettingsIcon, Key, Server, Cpu, CheckCircle2, AlertCircle, Loader2, Trash2, TriangleAlert, Wallet } from 'lucide-react';
+import { testAiConnection, deleteAllExpenses, resetAllData, getSettings, saveSettings, getBudget, saveBudget } from '../lib/api';
+
+function BudgetSection() {
+  const [budgetAmount, setBudgetAmount] = useState('');
+  const [projectName, setProjectName] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [result, setResult] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  useEffect(() => {
+    getBudget()
+      .then((data) => {
+        if (data) {
+          setBudgetAmount(data.totalBudget);
+          setProjectName(data.projectName);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleSave = async () => {
+    if (!budgetAmount || parseFloat(budgetAmount) <= 0) {
+      setResult({ type: 'error', message: 'Masukkan jumlah anggaran yang valid' });
+      return;
+    }
+
+    setSaving(true);
+    setResult(null);
+    try {
+      await saveBudget({
+        totalBudget: budgetAmount,
+        projectName: projectName || 'Renovasi Rumah',
+      });
+      setResult({ type: 'success', message: 'Anggaran berhasil disimpan' });
+    } catch (err: any) {
+      setResult({ type: 'error', message: err.message });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) return null;
+
+  return (
+    <div className="bg-surface border border-outline p-5 rounded-xl shadow-sm space-y-4">
+      <div className="flex items-center gap-2">
+        <Wallet size={18} className="text-primary" />
+        <h3 className="font-display text-lg font-bold text-on-surface">Anggaran Proyek</h3>
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <label className="font-mono text-xs text-gray-500 font-bold uppercase px-1">Nama Proyek</label>
+        <input
+          type="text"
+          value={projectName}
+          onChange={(e) => setProjectName(e.target.value)}
+          placeholder="Contoh: Renovasi Rumah"
+          className="w-full px-4 py-3 rounded-lg border border-outline focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all font-sans"
+        />
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <label className="font-mono text-xs text-gray-500 font-bold uppercase px-1">Total Anggaran (Rp)</label>
+        <input
+          type="text"
+          inputMode="numeric"
+          value={budgetAmount}
+          onChange={(e) => setBudgetAmount(e.target.value)}
+          placeholder="Contoh: 75000000"
+          className="w-full px-4 py-3 rounded-lg border border-outline focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all font-mono"
+        />
+        {budgetAmount && parseFloat(budgetAmount) > 0 && (
+          <p className="font-mono text-[10px] text-gray-400 mt-1 px-1">
+            = Rp {parseFloat(budgetAmount).toLocaleString('id-ID')}
+          </p>
+        )}
+      </div>
+
+      <button
+        onClick={handleSave}
+        disabled={saving}
+        className="w-full py-3 bg-primary text-white font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-primary/90 active:scale-[0.98] transition-all disabled:opacity-50 shadow-md"
+      >
+        {saving ? <Loader2 size={16} className="animate-spin" /> : <Wallet size={16} />}
+        {saving ? 'Menyimpan...' : 'Simpan Anggaran'}
+      </button>
+
+      {result && (
+        <div className={`flex items-center gap-2 px-4 py-3 rounded-lg border ${
+          result.type === 'success' ? 'text-green-700 bg-green-50 border-green-200' : 'text-red-700 bg-red-50 border-red-200'
+        }`}>
+          {result.type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+          <span className="font-sans text-sm font-medium">{result.message}</span>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function ResetDataSection() {
   const [showConfirm, setShowConfirm] = useState<'none' | 'expenses' | 'all'>('none');
@@ -389,6 +487,9 @@ export default function SettingsView() {
           <li>Buka menu "Struk OCR" untuk scan bon</li>
         </ol>
       </div>
+
+      {/* Budget Section */}
+      <BudgetSection />
 
       {/* Reset Data Section */}
       <ResetDataSection />

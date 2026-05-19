@@ -53,7 +53,7 @@ export default function DashboardView() {
   if (!data) return null;
 
   const totalSpent = parseFloat(data.totalSpent);
-  const totalBudget = data.budget ? parseFloat(data.budget.totalBudget) : 75_000_000;
+  const totalBudget = data.budget ? parseFloat(data.budget.totalBudget) : 0;
   const progress = totalBudget > 0 ? Math.min((totalSpent / totalBudget) * 100, 100) : 0;
   const remaining = totalBudget - totalSpent;
 
@@ -70,14 +70,19 @@ export default function DashboardView() {
             Rp {totalSpent.toLocaleString('id-ID')}
           </h2>
           
-          <div className="flex justify-between items-end mb-2">
-            <span className="font-mono text-xs text-gray-500">Progres Anggaran ({progress.toFixed(0)}%)</span>
-            <span className="font-mono text-sm text-primary font-bold">Sisa: Rp {remaining.toLocaleString('id-ID')}</span>
-          </div>
-          
-          <div className="w-full h-2.5 bg-gray-200 rounded-full overflow-hidden">
-            <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${progress}%` }}></div>
-          </div>
+          {totalBudget > 0 ? (
+            <>
+              <div className="flex justify-between items-end mb-2">
+                <span className="font-mono text-xs text-gray-500">Progres Anggaran ({progress.toFixed(0)}%)</span>
+                <span className="font-mono text-sm text-primary font-bold">Sisa: Rp {remaining.toLocaleString('id-ID')}</span>
+              </div>
+              <div className="w-full h-2.5 bg-gray-200 rounded-full overflow-hidden">
+                <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${progress}%` }}></div>
+              </div>
+            </>
+          ) : (
+            <p className="font-mono text-xs text-gray-400">Belum ada anggaran. Atur di menu Pengaturan.</p>
+          )}
         </div>
       </section>
 
