@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Settings as SettingsIcon, Key, Server, Cpu, CheckCircle2, AlertCircle, Loader2, Trash2, TriangleAlert } from 'lucide-react';
-import { testAiConnection, deleteAllExpenses, resetAllData } from '../lib/api';
+import { testAiConnection, deleteAllExpenses, resetAllData, getSettings, saveSettings } from '../lib/api';
 
 function ResetDataSection() {
   const [showConfirm, setShowConfirm] = useState<'none' | 'expenses' | 'all'>('none');
@@ -129,22 +129,19 @@ export default function SettingsView() {
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<'idle' | 'success' | 'error'>('idle');
   const [testMessage, setTestMessage] = useState('');
+  const [loadingSettings, setLoadingSettings] = useState(true);
 
   useEffect(() => {
-    const savedProvider = localStorage.getItem('ai_provider') || 'sumopod';
-    const savedModel = localStorage.getItem('ai_model') || 'gemini/gemini-2.0-flash';
-    const savedApiKey = localStorage.getItem('ai_api_key') || '';
-    
-    setProvider(savedProvider);
-    setModel(savedModel);
-    setApiKey(savedApiKey);
+    // Load settings from database (global)
+    getSettings()
+      .then((data) => {
+        if (data.provider) setProvider(data.provider);
+        if (data.model) setModel(data.model);
+        // apiKey is masked from server, don't overwrite if user hasn't typed
+      })
+      .catch(() => {})
+      .finally(() => setLoadingSettings(false));
   }, []);
-
-  const handleSave = () => {
-    localStorage.setItem('ai_provider', provider);
-    localStorage.setItem('ai_model', model);
-    localStorage.setItem('ai_api_key', apiKey);
-  };
 
   const handleTestConnection = async () => {
     if (!apiKey.trim()) {
@@ -158,16 +155,18 @@ export default function SettingsView() {
       return;
     }
 
-    handleSave();
     setIsTesting(true);
     setTestResult('idle');
     setTestMessage('');
 
     try {
+      // Test connection first
       const result = await testAiConnection(apiKey, model, provider);
       if (result.success) {
+        // Save to database (global) on success
+        await saveSettings({ apiKey, model, provider });
         setTestResult('success');
-        setTestMessage('Koneksi berhasil! Provider siap digunakan.');
+        setTestMessage('Koneksi berhasil! Settings disimpan secara global.');
       } else {
         setTestResult('error');
         setTestMessage(result.error || 'Koneksi gagal');

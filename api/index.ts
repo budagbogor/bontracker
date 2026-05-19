@@ -38,9 +38,31 @@ const budgets = pgTable('budgets', {
   updatedAt: timestamp('updated_at').defaultNow(),
 });
 
+const settings = pgTable('settings', {
+  id: serial('id').primaryKey(),
+  key: varchar('key', { length: 100 }).notNull().unique(),
+  value: text('value').notNull(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
 // DB connection
 const sqlClient = neon(process.env.DATABASE_URL!);
-const db = drizzle(sqlClient, { schema: { categories, expenses, budgets } });
+const db = drizzle(sqlClient, { schema: { categories, expenses, budgets, settings } });
+
+// Helper: get AI settings from DB
+async function getAiSettings() {
+  const rows = await db.select().from(settings);
+  const map: Record<string, string> = {};
+  for (const row of rows) {
+    map[row.key] = row.value;
+  }
+  return {
+    apiKey: map['ai_api_key'] || process.env.SUMOPOD_API_KEY || '',
+    model: map['ai_model'] || process.env.AI_MODEL || 'gemini/gemini-2.0-flash',
+    provider: map['ai_provider'] || 'sumopod',
+    baseUrl: map['ai_base_url'] || process.env.SUMOPOD_BASE_URL || 'https://ai.sumopod.com',
+  };
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Parse the path after /api/
@@ -154,9 +176,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const { image, apiKey: clientApiKey, model: clientModel } = req.body;
       if (!image) return res.status(400).json({ error: 'Image is required' });
 
-      const apiKey = clientApiKey || process.env.SUMOPOD_API_KEY;
-      const baseURL = process.env.SUMOPOD_BASE_URL || 'https://ai.sumopod.com';
-      const model = clientModel || process.env.AI_MODEL || 'gemini/gemini-2.0-flash';
+      // Get AI settings: client override > DB > env
+      const aiSettings = await getAiSettings();
+      const apiKey = clientApiKey || aiSettings.apiKey;
+      const baseURL = aiSettings.baseUrl;
+      const model = clientModel || aiSettings.model;
 
       if (!apiKey) return res.status(500).json({ error: 'API Key belum dikonfigurasi. Masukkan di menu Pengaturan.' });
 
@@ -198,6 +222,39 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
       const text = response.choices?.[0]?.message?.content || '';
       return res.json({ success: true, response: text });
+    }
+
+    // GET /api/settings — get AI settings
+    if (path === '/settings' && method === 'GET') {
+      const aiSettings = await getAiSettings();
+      return res.json({
+        provider: aiSettings.provider,
+        model: aiSettings.model,
+        apiKey: aiSettings.apiKey ? '••••••••' + aiSettings.apiKey.slice(-4) : '',
+        hasApiKey: !!aiSettings.apiKey,
+      });
+    }
+
+    // POST /api/settings — save AI settings to DB (global)
+    if (path === '/settings' && method === 'POST') {
+      const { apiKey, model, provider } = req.body;
+
+      // Upsert each setting
+      const upsert = async (key: string, value: string) => {
+        if (!value) return;
+        const existing = await db.select().from(settings).where(eq(settings.key, key));
+        if (existing.length > 0) {
+          await db.update(settings).set({ value, updatedAt: new Date() }).where(eq(settings.key, key));
+        } else {
+          await db.insert(settings).values({ key, value });
+        }
+      };
+
+      if (apiKey) await upsert('ai_api_key', apiKey);
+      if (model) await upsert('ai_model', model);
+      if (provider) await upsert('ai_provider', provider);
+
+      return res.json({ success: true, message: 'Settings berhasil disimpan' });
     }
 
     // Not found

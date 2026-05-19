@@ -130,14 +130,10 @@ export interface OcrResult {
 }
 
 export async function scanReceipt(imageBase64: string): Promise<OcrResult> {
-  // Get AI config from localStorage
-  const apiKey = localStorage.getItem('ai_api_key') || '';
-  const model = localStorage.getItem('ai_model') || 'gemini/gemini-2.0-flash';
-
   const res = await fetch(`${API_BASE}/ocr/receipt`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ image: imageBase64, apiKey, model }),
+    body: JSON.stringify({ image: imageBase64 }),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
@@ -154,6 +150,31 @@ export async function testAiConnection(apiKey: string, model: string, provider: 
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ apiKey, model, provider }),
   });
+  return res.json();
+}
+
+// ============ SETTINGS (Global) ============
+
+export interface AiSettings {
+  provider: string;
+  model: string;
+  apiKey: string;
+  hasApiKey: boolean;
+}
+
+export async function getSettings(): Promise<AiSettings> {
+  const res = await fetch(`${API_BASE}/settings`);
+  if (!res.ok) throw new Error('Failed to fetch settings');
+  return res.json();
+}
+
+export async function saveSettings(data: { apiKey?: string; model?: string; provider?: string }): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`${API_BASE}/settings`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Failed to save settings');
   return res.json();
 }
 

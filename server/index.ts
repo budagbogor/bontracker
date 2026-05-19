@@ -5,6 +5,7 @@ import { drizzle } from 'drizzle-orm/neon-http';
 import { desc, eq, sql } from 'drizzle-orm';
 import OpenAI from 'openai';
 import * as schema from '../src/db/schema';
+import { pgTable, serial, text, varchar, timestamp } from 'drizzle-orm/pg-core';
 
 dotenv.config();
 
@@ -14,6 +15,29 @@ app.use(express.json({ limit: '10mb' }));
 // Database connection
 const sqlClient = neon(process.env.DATABASE_URL!);
 const db = drizzle(sqlClient, { schema });
+
+// Settings table
+const settings = pgTable('settings', {
+  id: serial('id').primaryKey(),
+  key: varchar('key', { length: 100 }).notNull().unique(),
+  value: text('value').notNull(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+// Helper: get AI settings from DB
+async function getAiSettings() {
+  const rows = await db.select().from(settings);
+  const map: Record<string, string> = {};
+  for (const row of rows) {
+    map[row.key] = row.value;
+  }
+  return {
+    apiKey: map['ai_api_key'] || process.env.SUMOPOD_API_KEY || '',
+    model: map['ai_model'] || process.env.AI_MODEL || 'gemini/gemini-2.0-flash',
+    provider: map['ai_provider'] || 'sumopod',
+    baseUrl: map['ai_base_url'] || process.env.SUMOPOD_BASE_URL || 'https://ai.sumopod.com',
+  };
+}
 
 // ============ CATEGORIES ============
 
@@ -169,16 +193,17 @@ app.get('/api/dashboard/summary', async (_req, res) => {
 
 app.post('/api/ocr/receipt', async (req, res) => {
   try {
-    const { image, apiKey: clientApiKey, model: clientModel } = req.body; // base64 image + optional client-side config
+    const { image, apiKey: clientApiKey, model: clientModel } = req.body;
 
     if (!image) {
       return res.status(400).json({ error: 'Image is required' });
     }
 
-    // Use client-provided key first, fallback to .env
-    const apiKey = clientApiKey || process.env.SUMOPOD_API_KEY;
-    const baseURL = process.env.SUMOPOD_BASE_URL || 'https://ai.sumopod.com';
-    const model = clientModel || process.env.AI_MODEL || 'gemini/gemini-2.0-flash';
+    // Get AI settings: client override > DB > env
+    const aiSettings = await getAiSettings();
+    const apiKey = clientApiKey || aiSettings.apiKey;
+    const baseURL = aiSettings.baseUrl;
+    const model = clientModel || aiSettings.model;
 
     if (!apiKey) {
       return res.status(500).json({ error: 'API Key belum dikonfigurasi. Masukkan di menu Pengaturan.' });
@@ -269,6 +294,48 @@ app.post('/api/ai/test', async (req, res) => {
   } catch (error: any) {
     console.error('AI Test Error:', error);
     res.status(500).json({ error: error.message || 'Connection test failed' });
+  }
+});
+
+// ============ SETTINGS (Global) ============
+
+app.get('/api/settings', async (_req, res) => {
+  try {
+    const aiSettings = await getAiSettings();
+    res.json({
+      provider: aiSettings.provider,
+      model: aiSettings.model,
+      apiKey: aiSettings.apiKey ? '••••••••' + aiSettings.apiKey.slice(-4) : '',
+      hasApiKey: !!aiSettings.apiKey,
+    });
+  } catch (error) {
+    console.error('Error fetching settings:', error);
+    res.status(500).json({ error: 'Failed to fetch settings' });
+  }
+});
+
+app.post('/api/settings', async (req, res) => {
+  try {
+    const { apiKey, model, provider } = req.body;
+
+    const upsert = async (key: string, value: string) => {
+      if (!value) return;
+      const existing = await db.select().from(settings).where(eq(settings.key, key));
+      if (existing.length > 0) {
+        await db.update(settings).set({ value, updatedAt: new Date() }).where(eq(settings.key, key));
+      } else {
+        await db.insert(settings).values({ key, value });
+      }
+    };
+
+    if (apiKey) await upsert('ai_api_key', apiKey);
+    if (model) await upsert('ai_model', model);
+    if (provider) await upsert('ai_provider', provider);
+
+    res.json({ success: true, message: 'Settings berhasil disimpan' });
+  } catch (error) {
+    console.error('Error saving settings:', error);
+    res.status(500).json({ error: 'Failed to save settings' });
   }
 });
 

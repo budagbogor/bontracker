@@ -52,6 +52,17 @@ async function migrate() {
   `;
   console.log('✅ budgets table created');
 
+  // Create settings table
+  await sql`
+    CREATE TABLE IF NOT EXISTS settings (
+      id SERIAL PRIMARY KEY,
+      key VARCHAR(100) NOT NULL UNIQUE,
+      value TEXT NOT NULL,
+      updated_at TIMESTAMP DEFAULT NOW()
+    )
+  `;
+  console.log('✅ settings table created');
+
   console.log('🎉 Migration complete!');
 }
 
