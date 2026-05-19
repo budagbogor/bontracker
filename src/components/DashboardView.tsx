@@ -143,38 +143,6 @@ export default function DashboardView() {
         </div>
       </section>
 
-      {/* Project Visualization */}
-      <section className="bg-surface border border-outline rounded-xl overflow-hidden shadow-sm">
-        <div className="h-48 relative">
-          <img 
-            src="https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&q=80&w=800&h=400" 
-            alt="Project Floor" 
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-5">
-            <p className="text-white/80 font-mono text-xs uppercase tracking-widest mb-1">Tahap Saat Ini</p>
-            <h4 className="text-white font-display text-xl font-bold">
-              {data.budget?.currentPhase || 'Finishing Lantai 1'}
-            </h4>
-          </div>
-        </div>
-        <div className="p-4 flex items-center justify-between bg-surface">
-          <div className="flex -space-x-3">
-            {[1, 2].map((i) => (
-              <div key={i} className="w-8 h-8 rounded-full border-2 border-surface bg-gray-200 overflow-hidden">
-                <img src="https://images.unsplash.com/photo-1531427186611-ecfd6d936c79?auto=format&fit=crop&q=80&w=64&h=64&auto=format" alt="worker" className="opacity-50 object-cover" />
-              </div>
-            ))}
-            <div className="w-8 h-8 rounded-full border-2 border-surface bg-primary text-white flex items-center justify-center text-[10px] font-bold">
-              +3
-            </div>
-          </div>
-          <p className="font-mono text-xs text-gray-500">
-            Estimasi Selesai: {data.budget?.estimatedCompletion || '-'}
-          </p>
-        </div>
-      </section>
-
       {/* Add Expense Modal */}
       <AddExpenseModal
         isOpen={showAddModal}
