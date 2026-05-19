@@ -1,0 +1,6 @@
+{
+  "name": "RenoTrack",
+  "description": "Aplikasi manajemen keuangan renovasi rumah yang membantu melacak pengeluaran, menganalisis anggaran, dan input struk OCR.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

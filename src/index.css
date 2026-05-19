@@ -1,0 +1,32 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&family=Work+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Work Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --color-primary: #f26a1b; /* Using the bright orange as primary */
+  --color-primary-dark: #a14000;
+  --color-surface: #ffffff;
+  --color-background: #f8f9fa;
+  --color-on-surface: #191c1d;
+  --color-on-surface-variant: #594237;
+  --color-outline: #e1e3e4;
+  --color-outline-variant: #e1c0b2;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-on-surface);
+}
+
+.chiseled-btn {
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 2px 4px rgba(161, 64, 0, 0.2);
+}
+.chiseled-btn:active {
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+  transform: scale(0.98);
+}
+
