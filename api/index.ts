@@ -211,10 +211,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // POST /api/ai/test
     if (path === '/ai/test' && method === 'POST') {
       const { apiKey, model, provider } = req.body;
-      if (!apiKey) return res.status(400).json({ error: 'API Key diperlukan' });
+      
+      // If apiKey is 'USE_SAVED', get from DB
+      let keyToUse = apiKey;
+      if (!apiKey || apiKey === 'USE_SAVED') {
+        const aiSettings = await getAiSettings();
+        keyToUse = aiSettings.apiKey;
+      }
+      
+      if (!keyToUse) return res.status(400).json({ error: 'API Key diperlukan' });
 
       const baseURL = provider === 'openrouter' ? 'https://openrouter.ai/api/v1' : 'https://ai.sumopod.com';
-      const openai = new OpenAI({ apiKey, baseURL });
+      const openai = new OpenAI({ apiKey: keyToUse, baseURL });
       const response = await openai.chat.completions.create({
         model: model || 'gemini/gemini-2.0-flash',
         messages: [{ role: 'user', content: 'Respond with just: OK' }],

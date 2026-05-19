@@ -126,7 +126,9 @@ export default function SettingsView() {
   const [provider, setProvider] = useState('sumopod');
   const [model, setModel] = useState('gemini/gemini-2.0-flash');
   const [apiKey, setApiKey] = useState('');
+  const [hasExistingKey, setHasExistingKey] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [testResult, setTestResult] = useState<'idle' | 'success' | 'error'>('idle');
   const [testMessage, setTestMessage] = useState('');
   const [loadingSettings, setLoadingSettings] = useState(true);
@@ -137,14 +139,44 @@ export default function SettingsView() {
       .then((data) => {
         if (data.provider) setProvider(data.provider);
         if (data.model) setModel(data.model);
-        // apiKey is masked from server, don't overwrite if user hasn't typed
+        setHasExistingKey(data.hasApiKey);
       })
       .catch(() => {})
       .finally(() => setLoadingSettings(false));
   }, []);
 
+  const handleSave = async () => {
+    if (!apiKey.trim() && !hasExistingKey) {
+      setTestResult('error');
+      setTestMessage('API Key wajib diisi');
+      return;
+    }
+
+    setIsSaving(true);
+    setTestResult('idle');
+    setTestMessage('');
+
+    try {
+      await saveSettings({
+        apiKey: apiKey.trim() || undefined,
+        model,
+        provider,
+      });
+      setHasExistingKey(true);
+      setTestResult('success');
+      setTestMessage('Settings berhasil disimpan secara global.');
+      if (apiKey.trim()) setApiKey(''); // Clear input after save
+    } catch (err: any) {
+      setTestResult('error');
+      setTestMessage(err.message || 'Gagal menyimpan settings');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleTestConnection = async () => {
-    if (!apiKey.trim()) {
+    const keyToTest = apiKey.trim();
+    if (!keyToTest && !hasExistingKey) {
       setTestResult('error');
       setTestMessage('API Key wajib diisi');
       return;
@@ -160,11 +192,17 @@ export default function SettingsView() {
     setTestMessage('');
 
     try {
-      // Test connection first
-      const result = await testAiConnection(apiKey, model, provider);
+      // If user typed a new key, test with that. Otherwise test with existing (send empty, backend uses DB)
+      const result = await testAiConnection(keyToTest || 'USE_SAVED', model, provider);
       if (result.success) {
-        // Save to database (global) on success
-        await saveSettings({ apiKey, model, provider });
+        // Save to database on success
+        if (keyToTest) {
+          await saveSettings({ apiKey: keyToTest, model, provider });
+          setHasExistingKey(true);
+          setApiKey('');
+        } else {
+          await saveSettings({ model, provider });
+        }
         setTestResult('success');
         setTestMessage('Koneksi berhasil! Settings disimpan secara global.');
       } else {
@@ -274,9 +312,15 @@ export default function SettingsView() {
           <label className="font-mono text-xs text-gray-500 font-bold uppercase px-1 flex items-center gap-1.5">
             <Key size={14} /> API Key
           </label>
+          {hasExistingKey && !apiKey && (
+            <div className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-green-200 bg-green-50 mb-1">
+              <CheckCircle2 size={14} className="text-green-600" />
+              <span className="font-mono text-xs text-green-700 font-medium">API Key tersimpan secara global</span>
+            </div>
+          )}
           <input 
             type="password" 
-            placeholder="Masukkan API Key dari Sumopod"
+            placeholder={hasExistingKey ? "Kosongkan jika tidak ingin mengganti" : "Masukkan API Key dari Sumopod"}
             value={apiKey}
             onChange={(e) => {
               setApiKey(e.target.value);
@@ -285,23 +329,36 @@ export default function SettingsView() {
             className="w-full px-4 py-3 rounded-lg border border-outline focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all font-mono text-sm" 
           />
           <p className="font-mono text-[10px] text-gray-400 mt-1 px-1">
-            Dapatkan API Key di dashboard Sumopod → menu API Keys
+            {hasExistingKey ? 'Isi field di atas hanya jika ingin mengganti API Key' : 'Dapatkan API Key di dashboard Sumopod → menu API Keys'}
           </p>
         </div>
 
         {/* Action Buttons */}
         <div className="pt-4 space-y-3">
           <button 
+            onClick={handleSave}
+            disabled={isSaving}
+            className="w-full bg-primary text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-primary/90 active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed shadow-md"
+          >
+            {isSaving ? (
+              <Loader2 size={18} className="animate-spin" />
+            ) : (
+              <SettingsIcon size={18} />
+            )}
+            {isSaving ? 'Menyimpan...' : 'Simpan Settings'}
+          </button>
+
+          <button 
             onClick={handleTestConnection}
             disabled={isTesting}
-            className="w-full bg-primary text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-primary/90 active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed shadow-md"
+            className="w-full border border-primary text-primary font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-primary/5 active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed"
           >
             {isTesting ? (
               <Loader2 size={18} className="animate-spin" />
             ) : (
               <SettingsIcon size={18} />
             )}
-            {isTesting ? 'Menguji Koneksi...' : 'Test Koneksi & Simpan'}
+            {isTesting ? 'Menguji Koneksi...' : 'Test Koneksi'}
           </button>
 
           {/* Test Result Message */}
