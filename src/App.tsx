@@ -37,12 +37,8 @@ export default function App() {
       {/* Top App Bar */}
       <header className="sticky top-0 z-40 bg-surface/80 backdrop-blur-md border-b border-outline px-5 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-outline bg-gray-200">
-            <img 
-              src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=100&h=100" 
-              alt="User" 
-              className="w-full h-full object-cover"
-            />
+          <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-outline bg-primary flex items-center justify-center">
+            <span className="text-white font-bold text-sm">RT</span>
           </div>
           <h1 className="font-display text-xl font-bold text-primary-dark">RenoTrack</h1>
         </div>
