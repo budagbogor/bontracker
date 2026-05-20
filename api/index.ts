@@ -128,6 +128,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.json({ success: true });
     }
 
+    // PUT /api/expenses/:id
+    if (path.match(/^\/expenses\/\d+$/) && method === 'PUT') {
+      const id = parseInt(path.split('/')[2]);
+      const { title, amount, category, description, store, date, status } = req.body;
+      const result = await db.update(expenses)
+        .set({
+          ...(title && { title }),
+          ...(amount && { amount }),
+          ...(category && { category }),
+          ...(description !== undefined && { description }),
+          ...(store !== undefined && { store }),
+          ...(date && { date: new Date(date) }),
+          ...(status && { status }),
+        })
+        .where(eq(expenses.id, id))
+        .returning();
+      if (result.length === 0) return res.status(404).json({ error: 'Expense not found' });
+      return res.json(result[0]);
+    }
+
     // GET /api/categories
     if (path === '/categories' && method === 'GET') {
       const result = await db.select().from(categories);

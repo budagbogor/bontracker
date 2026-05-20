@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Wallet, Ruler, HardHat, Wrench, PlusCircle, Paintbrush, Banknote, Hammer, Package, Loader2 } from 'lucide-react';
-import { getDashboardSummary, type DashboardSummary } from '../lib/api';
+import { getDashboardSummary, type DashboardSummary, type Expense } from '../lib/api';
 import AddExpenseModal from './AddExpenseModal';
+import ExpenseDetailModal from './ExpenseDetailModal';
 
 const iconMap: Record<string, React.ElementType> = {
   Ruler, HardHat, Wrench, Paintbrush, Banknote, Hammer, Package,
@@ -20,6 +21,7 @@ export default function DashboardView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
 
   const fetchData = () => {
     setLoading(true);
@@ -121,7 +123,11 @@ export default function DashboardView() {
           {data.recentExpenses.map((trx) => {
             const Icon = iconMap[trx.category] || Package;
             return (
-              <div key={trx.id} className="bg-surface border border-outline p-4 rounded-xl flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer shadow-sm">
+              <div 
+                key={trx.id} 
+                onClick={() => setSelectedExpense(trx)}
+                className="bg-surface border border-outline p-4 rounded-xl flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer shadow-sm"
+              >
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-orange-50 rounded-lg flex items-center justify-center text-primary">
                     <Icon size={24} />
@@ -152,6 +158,13 @@ export default function DashboardView() {
       <AddExpenseModal
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
+        onSuccess={fetchData}
+      />
+
+      {/* Expense Detail Modal */}
+      <ExpenseDetailModal
+        expense={selectedExpense}
+        onClose={() => setSelectedExpense(null)}
         onSuccess={fetchData}
       />
     </div>

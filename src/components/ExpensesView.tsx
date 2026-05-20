@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Search, Paintbrush, HardHat, Wrench, ChevronRight, TrendingUp, Plus, Package, Loader2 } from 'lucide-react';
 import { getExpenses, type Expense } from '../lib/api';
 import AddExpenseModal from './AddExpenseModal';
+import ExpenseDetailModal from './ExpenseDetailModal';
 
 const iconMap: Record<string, React.ElementType> = {
   Material: Paintbrush,
@@ -31,6 +32,7 @@ export default function ExpensesView() {
   const [filter, setFilter] = useState('Semua');
   const [search, setSearch] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
 
   const fetchExpenses = () => {
     setLoading(true);
@@ -115,7 +117,7 @@ export default function ExpensesView() {
                   : exp.category === 'Tukang' ? 'bg-blue-50 text-blue-700' 
                   : 'bg-gray-100 text-gray-700';
                 return (
-                  <div key={exp.id} className="bg-surface border border-outline p-4 rounded-xl flex items-center justify-between hover:shadow-md transition-all cursor-pointer">
+                  <div key={exp.id} onClick={() => setSelectedExpense(exp)} className="bg-surface border border-outline p-4 rounded-xl flex items-center justify-between hover:shadow-md transition-all cursor-pointer">
                     <div className="flex items-center gap-4">
                       <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${colorClass}`}>
                         <Icon size={24} />
@@ -175,6 +177,13 @@ export default function ExpensesView() {
       <AddExpenseModal
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
+        onSuccess={fetchExpenses}
+      />
+
+      {/* Expense Detail Modal */}
+      <ExpenseDetailModal
+        expense={selectedExpense}
+        onClose={() => setSelectedExpense(null)}
         onSuccess={fetchExpenses}
       />
     </div>

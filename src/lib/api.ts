@@ -88,6 +88,23 @@ export async function deleteExpense(id: number): Promise<void> {
   if (!res.ok) throw new Error('Failed to delete expense');
 }
 
+export async function updateExpense(id: number, data: {
+  title?: string;
+  amount?: string;
+  category?: string;
+  description?: string;
+  store?: string;
+  date?: string;
+}): Promise<Expense> {
+  const res = await fetch(`${API_BASE}/expenses/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Failed to update expense');
+  return res.json();
+}
+
 // ============ BUDGET ============
 
 export async function getBudget(): Promise<Budget | null> {

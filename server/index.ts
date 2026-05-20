@@ -111,6 +111,31 @@ app.delete('/api/expenses/:id', async (req, res) => {
   }
 });
 
+// Update expense
+app.put('/api/expenses/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, amount, category, description, store, date, status } = req.body;
+    const result = await db.update(schema.expenses)
+      .set({
+        ...(title && { title }),
+        ...(amount && { amount }),
+        ...(category && { category }),
+        ...(description !== undefined && { description }),
+        ...(store !== undefined && { store }),
+        ...(date && { date: new Date(date) }),
+        ...(status && { status }),
+      })
+      .where(eq(schema.expenses.id, parseInt(id)))
+      .returning();
+    if (result.length === 0) return res.status(404).json({ error: 'Expense not found' });
+    res.json(result[0]);
+  } catch (error) {
+    console.error('Error updating expense:', error);
+    res.status(500).json({ error: 'Failed to update expense' });
+  }
+});
+
 // ============ BUDGETS ============
 
 // Get budget
