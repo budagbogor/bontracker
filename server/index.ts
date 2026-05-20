@@ -290,6 +290,28 @@ PENTING - Rules ketat:
       return res.status(500).json({ error: 'Gagal memproses hasil OCR', raw: text });
     }
 
+    // Post-processing: ensure all items have prices
+    if (parsed.items && Array.isArray(parsed.items) && parsed.total) {
+      const totalAmount = typeof parsed.total === 'number' ? parsed.total : parseFloat(parsed.total) || 0;
+      const itemsWithoutPrice = parsed.items.filter((i: any) => !i.price || i.price === 0);
+      
+      if (itemsWithoutPrice.length > 0 && totalAmount > 0) {
+        const knownSum = parsed.items
+          .filter((i: any) => i.price && i.price > 0)
+          .reduce((sum: number, i: any) => sum + (i.price * (i.qty || 1)), 0);
+        
+        const remainingAmount = totalAmount - knownSum;
+        const perItemEstimate = Math.round(remainingAmount / itemsWithoutPrice.length);
+        
+        parsed.items = parsed.items.map((item: any) => {
+          if (!item.price || item.price === 0) {
+            return { ...item, price: perItemEstimate > 0 ? perItemEstimate : Math.round(totalAmount / parsed.items.length) };
+          }
+          return item;
+        });
+      }
+    }
+
     res.json(parsed);
   } catch (error: any) {
     console.error('OCR Error:', error);
