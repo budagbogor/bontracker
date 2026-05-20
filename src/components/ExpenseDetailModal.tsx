@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Loader2, Trash2, Save, Pencil } from 'lucide-react';
 import { updateExpense, deleteExpense, type Expense } from '../lib/api';
 
@@ -12,16 +12,31 @@ const CATEGORIES = ['Material', 'Tukang', 'Alat', 'Lainnya'];
 
 export default function ExpenseDetailModal({ expense, onClose, onSuccess }: ExpenseDetailModalProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [title, setTitle] = useState(expense?.title || '');
-  const [amount, setAmount] = useState(expense?.amount || '');
-  const [category, setCategory] = useState(expense?.category || 'Material');
-  const [store, setStore] = useState(expense?.store || '');
-  const [date, setDate] = useState(expense?.date ? new Date(expense.date).toISOString().split('T')[0] : '');
-  const [description, setDescription] = useState(expense?.description || '');
+  const [title, setTitle] = useState('');
+  const [amount, setAmount] = useState('');
+  const [category, setCategory] = useState('Material');
+  const [store, setStore] = useState('');
+  const [date, setDate] = useState('');
+  const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Sync state when expense changes
+  useEffect(() => {
+    if (expense) {
+      setTitle(expense.title || '');
+      setAmount(expense.amount || '');
+      setCategory(expense.category || 'Material');
+      setStore(expense.store || '');
+      setDate(expense.date ? new Date(expense.date).toISOString().split('T')[0] : '');
+      setDescription(expense.description || '');
+      setIsEditing(false);
+      setShowDeleteConfirm(false);
+      setError(null);
+    }
+  }, [expense]);
 
   if (!expense) return null;
 
