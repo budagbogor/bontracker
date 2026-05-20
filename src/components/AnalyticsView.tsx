@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { TrendingUp, Wallet, Loader2, Package, Ruler, HardHat, Wrench } from 'lucide-react';
 import { getDashboardSummary, type DashboardSummary } from '../lib/api';
+import { formatRupiah } from '../lib/utils';
 
 const categoryColors: Record<string, string> = {
   Material: 'bg-orange-500',
@@ -70,7 +71,7 @@ export default function AnalyticsView() {
                 <span className="font-mono text-xs text-gray-500 font-bold uppercase">Total Terpakai</span>
                 <div className="flex items-baseline gap-2 mt-1">
                   <span className="font-display text-3xl font-bold text-on-surface">
-                    Rp {(totalSpent / 1_000_000).toFixed(1)}M
+                    {formatRupiah(totalSpent)}
                   </span>
                   {isOverBudget && (
                     <span className="font-mono text-sm text-red-600 font-bold flex items-center">
@@ -82,7 +83,7 @@ export default function AnalyticsView() {
               <div className="text-right">
                 <span className="font-mono text-xs text-gray-500 font-bold uppercase">Anggaran</span>
                 <span className="font-sans text-lg font-bold text-gray-700 block mt-1">
-                  Rp {(totalBudget / 1_000_000).toFixed(1)}M
+                  {formatRupiah(totalBudget)}
                 </span>
               </div>
             </div>
@@ -100,11 +101,11 @@ export default function AnalyticsView() {
               </div>
               {isOverBudget ? (
                 <p className="font-mono text-xs text-red-600 font-bold mt-2">
-                  Over budget: Rp {Math.abs(remaining).toLocaleString('id-ID')}
+                  Over budget: {formatRupiah(Math.abs(remaining))}
                 </p>
               ) : (
                 <p className="font-mono text-xs text-green-600 font-bold mt-2">
-                  Sisa: Rp {remaining.toLocaleString('id-ID')}
+                  Sisa: {formatRupiah(remaining)}
                 </p>
               )}
             </div>
@@ -120,7 +121,7 @@ export default function AnalyticsView() {
                 {isOverBudget ? 'Kelebihan Pengeluaran' : 'Sisa Dana'}
               </span>
               <span className={`font-display text-2xl font-bold block mt-1 ${isOverBudget ? 'text-red-700' : 'text-primary-dark'}`}>
-                Rp {(Math.abs(remaining) / 1_000_000).toFixed(1)}M
+                {formatRupiah(Math.abs(remaining))}
               </span>
             </div>
           </div>
@@ -153,7 +154,7 @@ export default function AnalyticsView() {
                       </div>
                       <div className="flex items-center gap-3">
                         <span className="font-mono text-xs text-gray-500">
-                          Rp {(parseFloat(cat.total) / 1_000_000).toFixed(1)}M
+                          {formatRupiah(cat.total)}
                         </span>
                         <span className="font-mono text-xs font-bold text-gray-700">{percent.toFixed(0)}%</span>
                       </div>

@@ -1,20 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Wallet, Ruler, HardHat, Wrench, PlusCircle, Paintbrush, Banknote, Hammer, Package, Loader2 } from 'lucide-react';
 import { getDashboardSummary, type DashboardSummary, type Expense } from '../lib/api';
+import { formatRupiah } from '../lib/utils';
 import AddExpenseModal from './AddExpenseModal';
 import ExpenseDetailModal from './ExpenseDetailModal';
 
 const iconMap: Record<string, React.ElementType> = {
   Ruler, HardHat, Wrench, Paintbrush, Banknote, Hammer, Package,
 };
-
-function formatRupiah(amount: string | number): string {
-  const num = typeof amount === 'string' ? parseFloat(amount) : amount;
-  if (num >= 1_000_000) {
-    return `Rp ${(num / 1_000_000).toFixed(1)}M`;
-  }
-  return `Rp ${num.toLocaleString('id-ID')}`;
-}
 
 export default function DashboardView() {
   const [data, setData] = useState<DashboardSummary | null>(null);
@@ -69,14 +62,14 @@ export default function DashboardView() {
         <div className="relative z-10">
           <p className="font-mono text-xs text-gray-500 uppercase tracking-widest mb-1">Total Pengeluaran</p>
           <h2 className="font-display text-3xl font-bold text-on-surface mb-4">
-            Rp {totalSpent.toLocaleString('id-ID')}
+            {formatRupiah(totalSpent)}
           </h2>
           
           {totalBudget > 0 ? (
             <>
               <div className="flex justify-between items-end mb-2">
                 <span className="font-mono text-xs text-gray-500">Progres Anggaran ({progress.toFixed(0)}%)</span>
-                <span className="font-mono text-sm text-primary font-bold">Sisa: Rp {remaining.toLocaleString('id-ID')}</span>
+                <span className="font-mono text-sm text-primary font-bold">Sisa: {formatRupiah(remaining)}</span>
               </div>
               <div className="w-full h-2.5 bg-gray-200 rounded-full overflow-hidden">
                 <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${progress}%` }}></div>
@@ -140,7 +133,7 @@ export default function DashboardView() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-mono text-sm font-bold text-on-surface mb-1">Rp {parseFloat(trx.amount).toLocaleString('id-ID')}</p>
+                  <p className="font-mono text-sm font-bold text-on-surface mb-1">{formatRupiah(trx.amount)}</p>
                   <span className="text-[9px] bg-green-100 text-green-800 px-2 py-0.5 rounded uppercase font-bold tracking-wider">
                     {trx.status || 'Berhasil'}
                   </span>

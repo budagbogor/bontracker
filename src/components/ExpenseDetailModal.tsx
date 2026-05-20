@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Loader2, Trash2, Save, Pencil } from 'lucide-react';
 import { updateExpense, deleteExpense, type Expense } from '../lib/api';
+import { formatRupiah } from '../lib/utils';
 
 interface ExpenseDetailModalProps {
   expense: Expense | null;
@@ -125,7 +126,7 @@ export default function ExpenseDetailModal({ expense, onClose, onSuccess }: Expe
               </div>
               <div>
                 <p className="font-mono text-[10px] text-gray-400 uppercase tracking-wider">Jumlah</p>
-                <p className="font-display text-2xl font-bold text-primary">Rp {parseFloat(expense.amount).toLocaleString('id-ID')}</p>
+                <p className="font-display text-2xl font-bold text-primary">{formatRupiah(expense.amount)}</p>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>

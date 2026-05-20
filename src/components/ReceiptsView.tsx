@@ -1,6 +1,7 @@
 import { Camera, Store, Calendar, Tags, Save, Upload, X, Loader2, CheckCircle2, AlertTriangle, Info } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { scanReceipt, createExpense, getSettings, type OcrResult } from '../lib/api';
+import { formatRupiah } from '../lib/utils';
 
 export default function ReceiptsView() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -254,7 +255,7 @@ export default function ReceiptsView() {
             {ocrResult.items.map((item, i) => (
               <div key={i} className="flex justify-between items-center text-sm">
                 <span className="text-blue-900">{item.name} {item.qty > 1 && <span className="text-blue-500">x{item.qty}</span>}</span>
-                <span className="font-mono text-blue-700 font-bold">Rp {item.price?.toLocaleString('id-ID') || '-'}</span>
+                <span className="font-mono text-blue-700 font-bold">{item.price ? formatRupiah(item.price) : '-'}</span>
               </div>
             ))}
           </div>

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Search, Paintbrush, HardHat, Wrench, ChevronRight, TrendingUp, Plus, Package, Loader2 } from 'lucide-react';
 import { getExpenses, type Expense } from '../lib/api';
+import { formatRupiah } from '../lib/utils';
 import AddExpenseModal from './AddExpenseModal';
 import ExpenseDetailModal from './ExpenseDetailModal';
 
@@ -130,7 +131,7 @@ export default function ExpensesView() {
                       </div>
                     </div>
                     <div className="text-right flex items-center gap-2">
-                      <p className="font-mono text-sm font-bold text-primary">Rp {parseFloat(exp.amount).toLocaleString('id-ID')}</p>
+                      <p className="font-mono text-sm font-bold text-primary">{formatRupiah(exp.amount)}</p>
                       <ChevronRight size={16} className="text-gray-400" />
                     </div>
                   </div>
@@ -150,14 +151,14 @@ export default function ExpensesView() {
               <TrendingUp className="text-white opacity-20 absolute -right-4 -bottom-4" size={100} />
               <p className="font-mono text-sm text-white/80 font-bold">Total Bulan Ini</p>
               <p className="font-display text-2xl text-white font-bold z-10">
-                Rp {(totalThisMonth / 1_000_000).toFixed(1)}M
+                {formatRupiah(totalThisMonth)}
               </p>
            </div>
            <div className="bg-gray-100 p-4 rounded-2xl flex flex-col justify-between aspect-square border border-outline">
               <p className="font-mono text-sm text-gray-600 font-bold">Transaksi Terbesar</p>
               <div>
                 <p className="font-display text-2xl text-on-surface font-bold">
-                  {maxExpense ? `Rp ${(parseFloat(maxExpense.amount) / 1_000_000).toFixed(1)}M` : '-'}
+                  {maxExpense ? formatRupiah(maxExpense.amount) : '-'}
                 </p>
                 <p className="font-mono text-xs text-gray-500">{maxExpense?.title || '-'}</p>
               </div>
