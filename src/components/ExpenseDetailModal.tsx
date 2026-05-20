@@ -146,8 +146,8 @@ export default function ExpenseDetailModal({ expense, onClose, onSuccess }: Expe
               )}
               {expense.description && (
                 <div>
-                  <p className="font-mono text-[10px] text-gray-400 uppercase tracking-wider">Catatan</p>
-                  <p className="font-sans text-sm text-gray-600">{expense.description}</p>
+                  <p className="font-mono text-[10px] text-gray-400 uppercase tracking-wider">Rincian Item</p>
+                  <pre className="font-sans text-sm text-gray-600 whitespace-pre-wrap mt-1">{expense.description}</pre>
                 </div>
               )}
             </div>
@@ -227,8 +227,8 @@ export default function ExpenseDetailModal({ expense, onClose, onSuccess }: Expe
             </div>
 
             <div>
-              <label className="font-mono text-xs text-gray-500 uppercase tracking-wider font-bold mb-1.5 block">Catatan</label>
-              <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} className="w-full px-4 py-3 bg-white border border-outline rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all font-sans resize-none" />
+              <label className="font-mono text-xs text-gray-500 uppercase tracking-wider font-bold mb-1.5 block">Rincian / Catatan</label>
+              <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={4} className="w-full px-4 py-3 bg-white border border-outline rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all font-sans resize-y" />
             </div>
 
             {error && <p className="text-red-500 font-mono text-xs bg-red-50 p-3 rounded-lg">{error}</p>}

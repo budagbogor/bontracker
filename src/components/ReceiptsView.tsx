@@ -63,8 +63,12 @@ export default function ReceiptsView() {
         if (result.category) setCategory(result.category);
         if (result.total) setTotal(result.total.toString());
         if (result.items && result.items.length > 0) {
-          const itemNames = result.items.map(i => `${i.name}${i.qty > 1 ? ` x${i.qty}` : ''}`).join(', ');
-          setNotes(itemNames);
+          const itemDetails = result.items.map(i => {
+            const priceStr = i.price ? ` - Rp ${i.price.toLocaleString('id-ID')}` : '';
+            const qtyStr = i.qty > 1 ? ` x${i.qty}` : '';
+            return `${i.name}${qtyStr}${priceStr}`;
+          }).join('\n');
+          setNotes(itemDetails);
         }
       } catch (err: any) {
         setError(err.message || 'Gagal memproses struk. Pastikan API Key sudah dikonfigurasi di Pengaturan.');
@@ -328,9 +332,9 @@ export default function ReceiptsView() {
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="font-mono text-xs text-gray-500 font-bold uppercase px-1">Catatan (Opsional)</label>
+          <label className="font-mono text-xs text-gray-500 font-bold uppercase px-1">Rincian Item / Catatan</label>
           <textarea
-            rows={2}
+            rows={4}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Detail barang atau keperluan khusus..."
