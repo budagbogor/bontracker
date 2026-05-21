@@ -81,6 +81,14 @@ app.get('/api/expenses', async (_req, res) => {
 app.post('/api/expenses', async (req, res) => {
   try {
     const { title, amount, categoryId, category, description, store, date, status, receiptUrl } = req.body;
+    
+    // Validate and fix date - if year is too old, assume current year
+    let expenseDate = date ? new Date(date) : new Date();
+    const currentYear = new Date().getFullYear();
+    if (expenseDate.getFullYear() < currentYear - 1) {
+      expenseDate.setFullYear(currentYear);
+    }
+    
     const result = await db.insert(schema.expenses).values({
       title,
       amount,
@@ -88,7 +96,7 @@ app.post('/api/expenses', async (req, res) => {
       category,
       description,
       store,
-      date: date ? new Date(date) : new Date(),
+      date: expenseDate,
       status: status || 'success',
       receiptUrl,
     }).returning();
@@ -267,7 +275,7 @@ PENTING - Rules ketat:
 - items.price WAJIB diisi angka harga untuk setiap item (baca dari kolom harga/jumlah di struk). Jika ada qty > 1, price = harga_satuan x qty (harga total baris tersebut)
 - Jika harga item tidak terbaca jelas, ESTIMASI dari total dibagi jumlah item
 - total = angka total akhir yang tertera di struk (tanpa Rp, tanpa titik/koma pemisah ribuan)
-- date format YYYY-MM-DD
+- date format YYYY-MM-DD. Tahun saat ini adalah 2026. Jika struk hanya menampilkan 2 digit tahun (misal 24, 25, 26), konversi ke 2024, 2025, 2026. Jika tidak ada tahun tertulis, gunakan 2026.
 - qty minimal 1
 - category: bahan bangunan/material = "Material", jasa tukang = "Tukang", peralatan/tools = "Alat", lainnya = "Lainnya"
 - Jawab HANYA JSON murni, tanpa markdown, tanpa backtick, tanpa penjelasan`,
