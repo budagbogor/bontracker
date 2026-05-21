@@ -113,7 +113,7 @@ export default function DashboardView() {
         </div>
         
         <div className="space-y-3">
-          {data.recentExpenses.map((trx) => {
+          {[...data.recentExpenses].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((trx) => {
             const Icon = iconMap[trx.category] || Package;
             return (
               <div 

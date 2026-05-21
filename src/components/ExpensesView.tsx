@@ -11,19 +11,22 @@ const iconMap: Record<string, React.ElementType> = {
   Alat: Wrench,
 };
 
-function groupByDate(expenses: Expense[]): Record<string, Expense[]> {
-  const groups: Record<string, Expense[]> = {};
-  for (const exp of expenses) {
+function groupByDate(expenses: Expense[]): [string, Expense[]][] {
+  // Sort by date descending first
+  const sorted = [...expenses].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  
+  const groups: Map<string, Expense[]> = new Map();
+  for (const exp of sorted) {
     const dateKey = new Date(exp.date).toLocaleDateString('id-ID', {
       weekday: 'long',
       day: 'numeric',
       month: 'long',
       year: 'numeric',
     });
-    if (!groups[dateKey]) groups[dateKey] = [];
-    groups[dateKey].push(exp);
+    if (!groups.has(dateKey)) groups.set(dateKey, []);
+    groups.get(dateKey)!.push(exp);
   }
-  return groups;
+  return Array.from(groups.entries());
 }
 
 export default function ExpensesView() {
@@ -108,7 +111,7 @@ export default function ExpensesView() {
 
       {/* List grouped */}
       <section className="space-y-6">
-        {Object.entries(grouped).map(([dateLabel, items]) => (
+        {grouped.map(([dateLabel, items]) => (
           <div key={dateLabel}>
             <h3 className="font-mono text-xs text-gray-500 mb-3 uppercase tracking-wider font-bold">{dateLabel}</h3>
             <div className="space-y-3">
