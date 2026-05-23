@@ -31,7 +31,7 @@ export default function AddExpenseModal({ isOpen, onClose, onSuccess }: AddExpen
       return;
     }
 
-    const numAmount = parseFloat(amount.replace(/\./g, '').replace(',', '.'));
+    const numAmount = parseFloat(amount.replace(/,/g, '.'));
     if (isNaN(numAmount) || numAmount <= 0) {
       setError('Jumlah harus berupa angka positif');
       return;

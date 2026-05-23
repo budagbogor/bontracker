@@ -28,7 +28,9 @@ export default function ExpenseDetailModal({ expense, onClose, onSuccess }: Expe
   useEffect(() => {
     if (expense) {
       setTitle(expense.title || '');
-      setAmount(expense.amount || '');
+      // Remove trailing .00 from decimal amount
+      const cleanAmount = expense.amount ? parseFloat(expense.amount).toString() : '';
+      setAmount(cleanAmount);
       setCategory(expense.category || 'Material');
       setStore(expense.store || '');
       setDate(expense.date ? new Date(expense.date).toISOString().split('T')[0] : '');
@@ -50,7 +52,7 @@ export default function ExpenseDetailModal({ expense, onClose, onSuccess }: Expe
       return;
     }
 
-    const numAmount = parseFloat(amount.replace(/\./g, '').replace(',', '.'));
+    const numAmount = parseFloat(amount.replace(/,/g, '.'));
     if (isNaN(numAmount) || numAmount <= 0) {
       setError('Jumlah harus berupa angka positif');
       return;
