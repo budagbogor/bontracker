@@ -12,6 +12,7 @@ export default function ReceiptsView() {
   const [saved, setSaved] = useState(false);
   const [hasApiKey, setHasApiKey] = useState<boolean | null>(null); // null = loading
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   // Form state
   const [storeName, setStoreName] = useState('');
@@ -90,6 +91,7 @@ export default function ReceiptsView() {
     setTotal('');
     setNotes('');
     if (fileInputRef.current) fileInputRef.current.value = '';
+    if (cameraInputRef.current) cameraInputRef.current.value = '';
   };
 
   const handleSave = async () => {
@@ -168,6 +170,14 @@ export default function ReceiptsView() {
           onChange={handleFileSelect}
           className="hidden"
         />
+        <input
+          ref={cameraInputRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={handleFileSelect}
+          className="hidden"
+        />
 
         <div
           onClick={!imagePreview && !isAnalyzing ? () => fileInputRef.current?.click() : undefined}
@@ -178,14 +188,21 @@ export default function ReceiptsView() {
             <div className="text-center">
               <Camera className="text-primary mx-auto mb-4" size={48} />
               <p className="font-mono text-sm text-primary font-bold uppercase">Foto Bon / Upload Gambar</p>
-              <p className="font-mono text-xs text-gray-500 mt-2">Tap area ini atau klik tombol di bawah</p>
-              <div className="mt-4 flex gap-2 justify-center">
+              <p className="font-mono text-xs text-gray-500 mt-2">Ambil foto langsung atau pilih dari galeri</p>
+              <div className="mt-4 flex gap-2 justify-center flex-wrap">
                 <button
-                  onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+                  onClick={(e) => { e.stopPropagation(); cameraInputRef.current?.click(); }}
                   className="px-4 py-2 bg-primary text-white rounded-lg font-mono text-xs font-bold flex items-center gap-2 shadow-md"
                 >
+                  <Camera size={14} />
+                  Kamera
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+                  className="px-4 py-2 bg-gray-700 text-white rounded-lg font-mono text-xs font-bold flex items-center gap-2 shadow-md"
+                >
                   <Upload size={14} />
-                  Pilih Gambar
+                  Galeri
                 </button>
               </div>
             </div>
