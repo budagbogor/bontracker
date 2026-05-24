@@ -9,7 +9,7 @@ const iconMap: Record<string, React.ElementType> = {
   Ruler, HardHat, Wrench, Paintbrush, Banknote, Hammer, Package,
 };
 
-export default function DashboardView() {
+export default function DashboardView({ onNavigate }: { onNavigate?: (tab: string) => void }) {
   const [data, setData] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -109,7 +109,7 @@ export default function DashboardView() {
       <section className="space-y-4">
         <div className="flex justify-between items-center">
           <h3 className="font-display text-lg font-bold text-on-surface">Transaksi Terbaru</h3>
-          <button className="font-mono text-xs text-primary font-bold hover:underline">Lihat Semua</button>
+          <button onClick={() => onNavigate?.('expenses')} className="font-mono text-xs text-primary font-bold hover:underline">Lihat Semua</button>
         </div>
         
         <div className="space-y-3">

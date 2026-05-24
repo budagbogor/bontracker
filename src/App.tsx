@@ -23,12 +23,12 @@ export default function App() {
 
   const renderContent = () => {
     switch(activeTab) {
-      case 'dashboard': return <DashboardView />;
+      case 'dashboard': return <DashboardView onNavigate={setActiveTab} />;
       case 'expenses': return <ExpensesView />;
       case 'receipts': return <ReceiptsView />;
       case 'analytics': return <AnalyticsView />;
       case 'settings': return <SettingsView />;
-      default: return <DashboardView />;
+      default: return <DashboardView onNavigate={setActiveTab} />;
     }
   };
 
